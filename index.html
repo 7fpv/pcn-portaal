@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCN Verslagportaal</title>
+<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#faf9f7;--card:#fff;--border:#e8e4de;--text:#1a1814;--muted:#7a7570;--accent:#2d6a4f;--accent-light:#e8f4ee;--accent2:#c25b2a;--radius:10px}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;padding:2.5rem 1.5rem 5rem}
+.header{text-align:center;margin-bottom:2.5rem;padding-bottom:2rem;border-bottom:1px solid var(--border)}
+.logo{font-family:'DM Serif Display',serif;font-size:32px;color:var(--accent);letter-spacing:-0.5px}
+.logo span{font-style:italic;color:var(--accent2)}
+.sub{font-size:14px;color:var(--muted);margin-top:6px}
+.step{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1rem}
+.step-title{font-size:11px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.step-num{background:var(--accent);color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;flex-shrink:0}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.pill-group{display:flex;flex-wrap:wrap;gap:8px}
+.pill{padding:7px 16px;border-radius:20px;border:1px solid var(--border);font-size:13px;cursor:pointer;transition:all .15s;background:var(--bg);color:var(--text);user-select:none}
+.pill:hover{border-color:var(--accent);color:var(--accent)}
+.pill.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.upload-zone{border:1.5px dashed var(--border);border-radius:var(--radius);padding:2.5rem;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:var(--accent-light)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:28px;margin-bottom:10px}
+.upload-text{font-size:14px;color:var(--muted)}
+.upload-text b{color:var(--accent);font-weight:500}
+.file-list{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.file-item{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--accent-light);border-radius:6px;font-size:13px}
+.file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-size{font-size:11px;color:var(--muted);flex-shrink:0}
+.file-remove{cursor:pointer;color:var(--muted);font-size:18px;line-height:1;flex-shrink:0;padding:0 4px}
+.file-remove:hover{color:var(--accent2)}
+textarea,input[type=text]{width:100%;border:1px solid var(--border);border-radius:6px;padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--card);color:var(--text);line-height:1.6}
+textarea{resize:vertical;min-height:110px}
+textarea:focus,input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,106,79,0.08)}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+.gen-btn{width:100%;padding:15px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:all .15s;letter-spacing:0.2px;margin-top:1.5rem}
+.gen-btn:hover:not(:disabled){background:#235a40;transform:translateY(-1px)}
+.gen-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.status-box{border-radius:var(--radius);padding:1rem 1.25rem;font-size:14px;line-height:1.6;margin-top:1rem}
+.status-box.info{background:var(--accent-light);border:1px solid #c3dfd0;color:#1a4a32}
+.status-box.error{background:#fef0eb;border:1px solid #f5c9b3;color:#7a3010}
+.dots span{animation:blink 1.2s infinite;display:inline-block}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+.result-box{border:1px solid var(--border);border-radius:var(--radius);background:var(--card);overflow:hidden;margin-top:1.5rem}
+.result-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:gap;gap:8px}
+.result-title{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:0.5px;text-transform:uppercase}
+.btn-group{display:flex;gap:8px}
+.action-btn{padding:6px 14px;font-size:12px;border:1px solid var(--border);background:transparent;border-radius:5px;cursor:pointer;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .12s;white-space:nowrap}
+.action-btn:hover{border-color:var(--accent);color:var(--accent)}
+.action-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.action-btn.primary:hover{background:#235a40}
+.result-content{padding:1.75rem;font-size:13.5px;line-height:1.85;white-space:pre-wrap;max-height:600px;overflow-y:auto;font-family:'DM Sans',sans-serif;color:var(--text)}
+.warn{font-size:12px;color:var(--muted);text-align:center;margin-top:1rem;line-height:1.7}
+.progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:10px}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 0.3s;width:0%}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">PCN <span>Verslag</span>portaal</div>
+    <div class="sub">Psychologisch Centrum Noord &nbsp;·&nbsp; Wijnegem &nbsp;·&nbsp; Automatische rapportgeneratie</div>
+  </div>
+
+  <div class="step">
+    <div class="step-title"><span class="step-num">1</span> Cliéntprofiel</div>
+    <div class="grid-3" style="margin-bottom:12px">
+      <div>
+        <label>Naam cliént</label>
+        <input type="text" id="clientName" placeholder="Jana De Vries" />
+      </div>
+      <div>
+        <label>Geboortedatum</label>
+        <input type="text" id="clientDOB" placeholder="14 maart 1998" />
+      </div>
+      <div>
+        <label>Afnameperiode</label>
+        <input type="text" id="clientPeriod" placeholder="Feb – Apr 2026" />
+      </div>
+    </div>
+    <label style="margin-bottom:8px">Leeftijdscategorie</label>
+    <div class="pill-group" id="ageGroup">
+      <div class="pill active" data-val="volwassene">Volwassene (18+)</div>
+      <div class="pill" data-val="jongere">Jongere (12–17)</div>
+      <div class="pill" data-val="kind">Kind (6–11)</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-title"><span class="step-num">2</span> Type onderzoek</div>
+    <div class="pill-group" id="diagType">
+      <div class="pill active" data-val="adhd_ass">ADHD + ASS</div>
+      <div class="pill" data-val="adhd">ADHD alleen</div>
+      <div class="pill" data-val="ass">ASS alleen</div>
+      <div class="pill" data-val="kort">Kort attest</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-title"><span class="step-num">3</span> Documenten uploaden</div>
+    <div class="upload-zone" id="dropzone">
+      <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt,.doc,.csv" />
+      <div class="upload-icon">📎</div>
+      <div class="upload-text">Sleep bestanden hierheen of <b>klik om te bladeren</b></div>
+      <div class="upload-text" style="font-size:12px;margin-top:5px;color:#aaa">Anamnese · Vragenlijsten · IQ-resultaten · DIVA · ASS-interview · …</div>
+    </div>
+    <div class="file-list" id="fileList"></div>
+  </div>
+
+  <div class="step">
+    <div class="step-title"><span class="step-num">4</span> Aanvullende context <span style="font-size:10px;background:#fef0eb;color:#c25b2a;padding:2px 8px;border-radius:4px;font-weight:500;letter-spacing:0.5px">OPTIONEEL</span></div>
+    <textarea id="extraContext" placeholder="Extra klinische opmerkingen, bijzonderheden die niet in de documenten staan, specifieke aandachtspunten voor het verslag…"></textarea>
+  </div>
+
+  <button class="gen-btn" id="genBtn" onclick="generateReport()">Verslag genereren →</button>
+  <div class="warn">Het gegenereerde verslag is een concept. Controleer altijd alle inhoud vóór gebruik.<br>Scores aangeduid als [XX] dienen handmatig ingevuld te worden.</div>
+
+  <div id="statusArea"></div>
+  <div id="resultArea"></div>
+</div>
+
+<script>
+let files = [];
+let ageVal = 'volwassene';
+let diagVal = 'adhd_ass';
+let lastReportText = '';
+
+document.querySelectorAll('#ageGroup .pill').forEach(p => {
+  p.onclick = () => { document.querySelectorAll('#ageGroup .pill').forEach(x=>x.classList.remove('active')); p.classList.add('active'); ageVal=p.dataset.val; };
+});
+document.querySelectorAll('#diagType .pill').forEach(p => {
+  p.onclick = () => { document.querySelectorAll('#diagType .pill').forEach(x=>x.classList.remove('active')); p.classList.add('active'); diagVal=p.dataset.val; };
+});
+
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
+document.getElementById('fileInput').addEventListener('change', e => handleFiles(e.target.files));
+
+function handleFiles(list) {
+  Array.from(list).forEach(f => { if(!files.find(x=>x.name===f.name)) files.push(f); });
+  renderFiles();
+}
+function renderFiles() {
+  document.getElementById('fileList').innerHTML = files.map((f,i) => `
+    <div class="file-item">
+      <span>📄</span>
+      <span class="file-name">${f.name}</span>
+      <span class="file-size">${(f.size/1024).toFixed(0)} KB</span>
+      <span class="file-remove" onclick="removeFile(${i})">×</span>
+    </div>`).join('');
+}
+function removeFile(i) { files.splice(i,1); renderFiles(); }
+
+async function readFile(file) {
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result || '');
+    r.onerror = () => res('[bestand onleesbaar]');
+    r.readAsText(file,'UTF-8');
+  });
+}
+
+function setStatus(html, type) {
+  const el = document.getElementById('statusArea');
+  el.innerHTML = html ? `<div class="status-box ${type}">${html}</div>` : '';
+}
+
+async function generateReport() {
+  const name = document.getElementById('clientName').value.trim();
+  const dob = document.getElementById('clientDOB').value.trim();
+  const period = document.getElementById('clientPeriod').value.trim();
+  const extra = document.getElementById('extraContext').value.trim();
+
+  if (!name) { setStatus('⚠️ Vul de naam van de cliënt in.','error'); return; }
+  if (!files.length) { setStatus('⚠️ Upload minstens één document.','error'); return; }
+
+  document.getElementById('genBtn').disabled = true;
+  document.getElementById('resultArea').innerHTML = '';
+  setStatus(`Documenten inlezen<span class="dots"><span>.</span><span>.</span><span>.</span></span><div class="progress-bar"><div class="progress-fill" id="prog"></div></div>`,'info');
+
+  let fileContents = '';
+  for (let i=0; i<files.length; i++) {
+    const t = await readFile(files[i]);
+    fileContents += `\n\n=== BESTAND: ${files[i].name} ===\n${t.slice(0,9000)}`;
+    document.getElementById('prog').style.width = ((i+1)/files.length*40)+'%';
+  }
+
+  const diagLabels = {adhd_ass:'ADHD + ASS',adhd:'ADHD alleen',ass:'ASS alleen',kort:'Diagnostisch attest (kort)'};
+  const ageLabels = {volwassene:'volwassene (18+)',jongere:'jongere (12–17)',kind:'kind (6–11)'};
+
+  setStatus(`Verslag schrijven<span class="dots"><span>.</span><span>.</span><span>.</span></span> Dit duurt 30–60 seconden.<div class="progress-bar"><div class="progress-fill" id="prog" style="width:50%;animation:progAnim 30s linear forwards"></div></div>`,'info');
+
+  const style = document.createElement('style');
+  style.textContent = '@keyframes progAnim{from{width:50%}to{width:90%}}';
+  document.head.appendChild(style);
+
+  const system = `Je bent Freya Nelen, psycholoog bij Psychologisch Centrum Noord (PCN) te Wijnegem. Je schrijft psychodiagnostische verslagen in professioneel, formeel Nederlands. Derde persoon altijd. Lange, rijke zinnen. Academisch maar warm.
+
+JOUW VASTE SCHRIJFSTIJL:
+- Aanmelding: altijd "[Naam], [X] jaar, meldt zich aan bij PCN voor een psychodiagnostisch onderzoek naar..."
+- Verbindingswoorden: "Om te beginnen", "Vervolgens", "Daarnaast", "Tot slot", "Opvallend hierbij is dat"
+- Aanmelding = 3–5 narratieve paragrafen, geen opsommingen
+- Anamnese = narratief, rijke beschrijving per domein, geen bullets
+- Algemeen Besluit begint ALTIJD: "Eerst en vooral kunnen we op basis van dit onderzoek tot de conclusie komen dat de resultaten aansluiten bij volgende DSM-5 diagnose:"
+- DIVA-resultaten: "voldoet aan X van de Y kenmerken voor het domein..."
+- Advies: concreet, persoonsgebonden, met therapievormen (ACT, CGT, COGMED, psycho-educatie)
+- Bijlagen: altijd informatieve bijlagen over ASS en/of ADHD toevoegen
+
+DOCUMENT STRUCTUUR (strikte volgorde, gebruik ### voor hoofdtitels en ## voor subtitels):
+### HEADER
+Psych. Cons.: Marilyn Istas | Psycholoog: Freya Nelen | Bijlweg 11, 2110 Wijnegem | 0477 21 88 41
+
+### Diagnostisch onderzoeksverslag
+Naam: [naam] | Afname: [periode] | Geboortedatum: [datum]
+
+### Aanmelding
+[3-5 paragrafen]
+
+### Testbatterij
+[lijst instrumenten]
+
+### Uitgebreide anamnese
+## Krachten/positieve eigenschappen
+## Familiale anamnese
+## Ontwikkeling (prenataal, motorisch, taal, algemeen kind)
+## Inventaris levensdomeinen (sociaal, schools/beroepsmatig, emotioneel, vrije tijd, fysiek)
+
+### [Per instrument - volledige sectie per test]
+
+### Besluit
+[integratief, DSM-5 diagnoses]
+
+### Advies
+[persoonsgebonden]
+
+### Verslag opgemaakt door
+Freya Nelen - Marilyn Istas - PCN
+
+Gebruik [XX] voor ontbrekende scores. Wees zo volledig mogelijk.`;
+
+  const user = `Schrijf een volledig psychodiagnostisch verslag:
+
+NAAM: ${name}
+GEBOORTEDATUM: ${dob||'[invullen]'}
+AFNAMEPERIODE: ${period||'[invullen]'}
+TYPE: ${diagLabels[diagVal]}
+LEEFTIJD: ${ageLabels[ageVal]}
+${extra?`\nADDITIONELE CONTEXT:\n${extra}`:''}
+
+DOCUMENTEN:
+${fileContents}
+
+Schrijf het volledige verslag zoals Freya Nelen het zou schrijven.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:4096,
+        system,
+        messages:[{role:'user',content:user}]
+      })
+    });
+    if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||`HTTP ${resp.status}`);}
+    const data = await resp.json();
+    const text = data.content?.find(b=>b.type==='text')?.text||'';
+    lastReportText = text;
+    setStatus('','');
+    showResult(text, name);
+  } catch(e) {
+    setStatus(`❌ Fout: ${e.message}`,'error');
+  }
+  document.getElementById('genBtn').disabled = false;
+}
+
+function showResult(text, name) {
+  document.getElementById('resultArea').innerHTML = `
+    <div class="result-box">
+      <div class="result-header">
+        <span class="result-title">✓ Verslag — ${name}</span>
+        <div class="btn-group">
+          <button class="action-btn" onclick="copyReport()">Kopiëren</button>
+          <button class="action-btn primary" onclick="downloadWord()">⬇ Word downloaden</button>
+        </div>
+      </div>
+      <div class="result-content" id="reportText">${escHtml(text)}</div>
+    </div>`;
+}
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function copyReport() {
+  navigator.clipboard.writeText(lastReportText).then(()=>{
+    const b=document.querySelector('.action-btn:not(.primary)');
+    b.textContent='Gekopieerd ✓';
+    setTimeout(()=>b.textContent='Kopiëren',2000);
+  });
+}
+
+async function downloadWord() {
+  const btn = document.querySelector('.action-btn.primary');
+  btn.textContent='Bezig…';
+  btn.disabled=true;
+  try {
+    const name = document.getElementById('clientName').value.trim()||'Cliënt';
+    await buildAndDownloadDocx(lastReportText, name);
+    btn.textContent='⬇ Word downloaden';
+  } catch(e) {
+    alert('Word-export mislukt: '+e.message);
+    btn.textContent='⬇ Word downloaden';
+  }
+  btn.disabled=false;
+}
+
+async function buildAndDownloadDocx(text, clientName) {
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } = docx;
+
+  const lines = text.split('\n');
+  const children = [];
+
+  const headerPara = new Paragraph({
+    children: [
+      new TextRun({text:'Psych. Cons.: Marilyn Istas  |  Psycholoog: Freya Nelen', size:20, font:'Arial', color:'555555'}),
+    ],
+    spacing:{after:60}
+  });
+  const headerPara2 = new Paragraph({
+    children: [new TextRun({text:'Bijlweg 11, 2110 Wijnegem  |  0477 21 88 41  |  marilyn@psychologischcentrumnoord.be', size:20, font:'Arial', color:'555555'})],
+    spacing:{after:300},
+    border:{bottom:{style:BorderStyle.SINGLE,size:4,color:'2d6a4f',space:6}}
+  });
+  children.push(headerPara, headerPara2);
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) { children.push(new Paragraph({spacing:{after:80}})); continue; }
+
+    if (trimmed.startsWith('### ')) {
+      children.push(new Paragraph({
+        heading: HeadingLevel.HEADING_1,
+        children:[new TextRun({text:trimmed.slice(4), font:'Arial', size:28, bold:true, color:'2d6a4f'})],
+        spacing:{before:360,after:160}
+      }));
+    } else if (trimmed.startsWith('## ')) {
+      children.push(new Paragraph({
+        heading: HeadingLevel.HEADING_2,
+        children:[new TextRun({text:trimmed.slice(3), font:'Arial', size:24, bold:true, color:'1a4a32'})],
+        spacing:{before:240,after:120}
+      }));
+    } else if (trimmed.startsWith('# ')) {
+      children.push(new Paragraph({
+        heading: HeadingLevel.HEADING_1,
+        children:[new TextRun({text:trimmed.slice(2), font:'Arial', size:28, bold:true, color:'2d6a4f'})],
+        spacing:{before:360,after:160}
+      }));
+    } else if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+      children.push(new Paragraph({
+        children:[new TextRun({text:trimmed.slice(2), font:'Arial', size:22})],
+        bullet:{level:0},
+        spacing:{after:60}
+      }));
+    } else if (/^\d+\.\s/.test(trimmed)) {
+      children.push(new Paragraph({
+        children:[new TextRun({text:trimmed.replace(/^\d+\.\s/,''), font:'Arial', size:22})],
+        numbering:{reference:'numList',level:0},
+        spacing:{after:60}
+      }));
+    } else {
+      const runs = [];
+      let rest = trimmed;
+      const boldRe = /\*\*(.+?)\*\*/g;
+      let last = 0; let m;
+      while((m=boldRe.exec(rest))!==null) {
+        if(m.index>last) runs.push(new TextRun({text:rest.slice(last,m.index),font:'Arial',size:22}));
+        runs.push(new TextRun({text:m[1],font:'Arial',size:22,bold:true}));
+        last=m.index+m[0].length;
+      }
+      if(last<rest.length) runs.push(new TextRun({text:rest.slice(last),font:'Arial',size:22}));
+      children.push(new Paragraph({children:runs,spacing:{after:100},alignment:AlignmentType.LEFT}));
+    }
+  }
+
+  children.push(
+    new Paragraph({spacing:{before:480},border:{top:{style:BorderStyle.SINGLE,size:4,color:'2d6a4f',space:6}},children:[]}),
+    new Paragraph({children:[new TextRun({text:'Freya Nelen',font:'Arial',size:22,bold:true})],spacing:{after:60}}),
+    new Paragraph({children:[new TextRun({text:'Psycholoog · PCN Psychologisch Centrum Noord',font:'Arial',size:20,color:'555555'})],spacing:{after:40}}),
+    new Paragraph({children:[new TextRun({text:'Bijlweg 11, 2110 Wijnegem  |  www.psychologischcentrumnoord.be',font:'Arial',size:20,color:'555555'})]})
+  );
+
+  const doc = new Document({
+    numbering:{config:[{reference:'numList',levels:[{level:0,format:'decimal',text:'%1.',alignment:'left',style:{paragraph:{indent:{left:720,hanging:360}}}}]}]},
+    styles:{
+      default:{document:{run:{font:'Arial',size:22}}},
+      paragraphStyles:[
+        {id:'Heading1',name:'Heading 1',basedOn:'Normal',next:'Normal',quickFormat:true,run:{size:28,bold:true,font:'Arial',color:'2d6a4f'},paragraph:{spacing:{before:360,after:160},outlineLevel:0}},
+        {id:'Heading2',name:'Heading 2',basedOn:'Normal',next:'Normal',quickFormat:true,run:{size:24,bold:true,font:'Arial',color:'1a4a32'},paragraph:{spacing:{before:240,after:120},outlineLevel:1}},
+      ]
+    },
+    sections:[{
+      properties:{page:{size:{width:11906,height:16838},margin:{top:1134,right:1134,bottom:1134,left:1134}}},
+      children
+    }]
+  });
+
+  const buf = await Packer.toBlob(doc);
+  const url = URL.createObjectURL(buf);
+  const a = document.createElement('a');
+  a.href=url;
+  a.download=`Verslag ${clientName}.docx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
