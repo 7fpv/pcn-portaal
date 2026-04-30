@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCN Verslagportaal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#faf9f7;--card:#fff;--border:#e8e4de;--text:#1a1814;--muted:#7a7570;--accent:#2d6a4f;--al:#e8f4ee;--accent2:#c25b2a;--r:10px}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;padding:2.5rem 1.5rem 5rem}
+.hdr{text-align:center;margin-bottom:2.5rem;padding-bottom:2rem;border-bottom:1px solid var(--border)}
+.logo{font-family:'DM Serif Display',serif;font-size:32px;color:var(--accent);letter-spacing:-.5px}
+.logo span{font-style:italic;color:var(--accent2)}
+.sub{font-size:14px;color:var(--muted);margin-top:6px}
+#apiScreen{position:fixed;inset:0;background:rgba(250,249,247,.97);display:flex;align-items:center;justify-content:center;z-index:100}
+.acard{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2.5rem;max-width:420px;width:90%;text-align:center}
+.alogo{font-family:'DM Serif Display',serif;font-size:26px;color:var(--accent);margin-bottom:6px}
+.alogo span{font-style:italic;color:var(--accent2)}
+.asub{font-size:13px;color:var(--muted);margin-bottom:2rem;line-height:1.6}
+.albl{font-size:12px;color:var(--muted);text-align:left;display:block;margin-bottom:6px}
+.ainwrap{position:relative;margin-bottom:1rem}
+.ainwrap input{width:100%;border:1px solid var(--border);border-radius:8px;padding:11px 44px 11px 13px;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--bg);color:var(--text)}
+.ainwrap input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,106,79,.08)}
+.tv{position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--muted);font-size:13px;user-select:none}
+.tv:hover{color:var(--accent)}
+.abtn{width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;margin-bottom:1rem}
+.abtn:hover{background:#235a40}
+.anote{font-size:11px;color:var(--muted);line-height:1.6}
+.anote a{color:var(--accent);text-decoration:none}
+.aerr{font-size:12px;color:#c25b2a;margin-bottom:8px;display:none}
+.kbar{background:var(--al);border-bottom:1px solid #c3dfd0;padding:8px 1.5rem;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#1a4a32}
+.chg{cursor:pointer;color:var(--accent);font-weight:500;text-decoration:underline}
+.step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;margin-bottom:1rem}
+.stit{font-size:11px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.snum{background:var(--accent);color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;flex-shrink:0}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.pg{display:flex;flex-wrap:wrap;gap:8px}
+.pill{padding:7px 16px;border-radius:20px;border:1px solid var(--border);font-size:13px;cursor:pointer;transition:all .15s;background:var(--bg);color:var(--text);user-select:none}
+.pill:hover{border-color:var(--accent);color:var(--accent)}
+.pill.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dz{border:1.5px dashed var(--border);border-radius:var(--r);padding:2.5rem;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+.dz:hover,.dz.drag{border-color:var(--accent);background:var(--al)}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dzic{font-size:28px;margin-bottom:10px}
+.dztx{font-size:14px;color:var(--muted)}
+.dztx b{color:var(--accent);font-weight:500}
+.flist{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.fi{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--al);border-radius:6px;font-size:13px}
+.fn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fsz{font-size:11px;color:var(--muted);flex-shrink:0}
+.frm{cursor:pointer;color:var(--muted);font-size:18px;line-height:1;flex-shrink:0;padding:0 4px}
+.frm:hover{color:var(--accent2)}
+textarea,input[type=text]{width:100%;border:1px solid var(--border);border-radius:6px;padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--card);color:var(--text);line-height:1.6}
+textarea{resize:vertical;min-height:110px}
+textarea:focus,input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,106,79,.08)}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+.gbtn{width:100%;padding:15px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:all .15s;margin-top:1.5rem}
+.gbtn:hover:not(:disabled){background:#235a40;transform:translateY(-1px)}
+.gbtn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.sb{border-radius:var(--r);padding:1rem 1.25rem;font-size:14px;line-height:1.6;margin-top:1rem}
+.sb.info{background:var(--al);border:1px solid #c3dfd0;color:#1a4a32}
+.sb.err{background:#fef0eb;border:1px solid #f5c9b3;color:#7a3010}
+.dots span{animation:blink 1.2s infinite;display:inline-block}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+.rbox{border:1px solid var(--border);border-radius:var(--r);background:var(--card);overflow:hidden;margin-top:1.5rem}
+.rhdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.rtit{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+.bgrp{display:flex;gap:8px}
+.abtn2{padding:6px 14px;font-size:12px;border:1px solid var(--border);background:transparent;border-radius:5px;cursor:pointer;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .12s;white-space:nowrap}
+.abtn2:hover{border-color:var(--accent);color:var(--accent)}
+.abtn2.pr{background:var(--accent);color:#fff;border-color:var(--accent)}
+.abtn2.pr:hover{background:#235a40}
+.rcnt{padding:1.75rem;font-size:13.5px;line-height:1.85;white-space:pre-wrap;max-height:600px;overflow-y:auto;color:var(--text)}
+.warn{font-size:12px;color:var(--muted);text-align:center;margin-top:1rem;line-height:1.7}
+.pb{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:10px}
+.pf{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;width:0%}
+@media(max-width:600px){.g3{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div id="apiScreen">
+  <div class="acard">
+    <div class="alogo">PCN <span>Verslag</span>portaal</div>
+    <p class="asub">Voer je Anthropic API-sleutel in om te starten.<br>De sleutel wordt alleen lokaal in je browser bewaard.</p>
+    <label class="albl">Anthropic API-sleutel</label>
+    <div class="ainwrap">
+      <input type="password" id="keyIn" placeholder="sk-ant-api03-..." autocomplete="off"/>
+      <span class="tv" id="tvBtn" onclick="toggleVis()">toon</span>
+    </div>
+    <div class="aerr" id="aerr">Ongeldige sleutel — voer een geldige API-sleutel in</div>
+    <button class="abtn" onclick="submitKey()">Doorgaan →</button>
+    <p class="anote">Nog geen sleutel? <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a><br>Je sleutel verlaat nooit dit scherm.</p>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="kbar">
+    <span>🔑 Sleutel actief: <span id="kprev" style="font-family:monospace"></span></span>
+    <span class="chg" onclick="resetKey()">Wijzigen</span>
+  </div>
+  <div class="wrap">
+    <div class="hdr">
+      <div class="logo">PCN <span>Verslag</span>portaal</div>
+      <div class="sub">Psychologisch Centrum Noord · Wijnegem · Automatische rapportgeneratie</div>
+    </div>
+    <div class="step">
+      <div class="stit"><span class="snum">1</span> Cliëntprofiel</div>
+      <div class="g3" style="margin-bottom:12px">
+        <div><label>Naam cliënt</label><input type="text" id="cName" placeholder="Jana De Vries"/></div>
+        <div><label>Geboortedatum</label><input type="text" id="cDOB" placeholder="14 maart 1998"/></div>
+        <div><label>Afnameperiode</label><input type="text" id="cPeriod" placeholder="Feb – Apr 2026"/></div>
+      </div>
+      <label style="margin-bottom:8px">Leeftijdscategorie</label>
+      <div class="pg" id="ageG">
+        <div class="pill on" data-v="volwassene">Volwassene (18+)</div>
+        <div class="pill" data-v="jongere">Jongere (12–17)</div>
+        <div class="pill" data-v="kind">Kind (6–11)</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="stit"><span class="snum">2</span> Type onderzoek</div>
+      <div class="pg" id="diagG">
+        <div class="pill on" data-v="adhd_ass">ADHD + ASS</div>
+        <div class="pill" data-v="adhd">ADHD alleen</div>
+        <div class="pill" data-v="ass">ASS alleen</div>
+        <div class="pill" data-v="kort">Kort attest</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="stit"><span class="snum">3</span> Documenten uploaden</div>
+      <div class="dz" id="dz">
+        <input type="file" id="fi" multiple accept=".pdf,.docx,.txt,.doc,.csv"/>
+        <div class="dzic">📎</div>
+        <div class="dztx">Sleep bestanden hierheen of <b>klik om te bladeren</b></div>
+        <div class="dztx" style="font-size:12px;margin-top:5px;color:#aaa">Anamnese · Vragenlijsten · IQ-resultaten · DIVA · ASS-interview</div>
+      </div>
+      <div class="flist" id="flist"></div>
+    </div>
+    <div class="step">
+      <div class="stit"><span class="snum">4</span> Aanvullende context <span style="font-size:10px;background:#fef0eb;color:#c25b2a;padding:2px 8px;border-radius:4px;font-weight:500">OPTIONEEL</span></div>
+      <textarea id="extra" placeholder="Extra klinische opmerkingen, bijzonderheden die niet in de documenten staan…"></textarea>
+    </div>
+    <button class="gbtn" id="gbtn" onclick="generate()">Verslag genereren →</button>
+    <div class="warn">Het gegenereerde verslag is een concept. Controleer altijd alle inhoud vóór gebruik.<br>Scores aangeduid als [XX] dienen handmatig ingevuld te worden.</div>
+    <div id="status"></div>
+    <div id="result"></div>
+  </div>
+</div>
+
+<script>
+let files=[], ageVal='volwassene', diagVal='adhd_ass', lastText='', apiKey='';
+
+function toggleVis(){
+  const i=document.getElementById('keyIn'),b=document.getElementById('tvBtn');
+  i.type=i.type==='password'?(b.textContent='verberg','text'):(b.textContent='toon','password');
+}
+function submitKey(){
+  const v=document.getElementById('keyIn').value.trim(),e=document.getElementById('aerr');
+  if(v.length<10){e.style.display='block';return;}
+  e.style.display='none';
+  apiKey=v;sessionStorage.setItem('pcnk',v);
+  document.getElementById('kprev').textContent=v.slice(0,10)+'••••'+v.slice(-4);
+  document.getElementById('apiScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+}
+document.getElementById('keyIn').addEventListener('keydown',e=>{if(e.key==='Enter')submitKey();});
+function resetKey(){
+  apiKey='';sessionStorage.removeItem('pcnk');
+  document.getElementById('keyIn').value='';
+  document.getElementById('apiScreen').style.display='flex';
+  document.getElementById('app').style.display='none';
+}
+(()=>{const s=sessionStorage.getItem('pcnk');if(s&&s.length>10){apiKey=s;document.getElementById('kprev').textContent=s.slice(0,10)+'••••'+s.slice(-4);document.getElementById('apiScreen').style.display='none';document.getElementById('app').style.display='block';}})();
+
+document.querySelectorAll('#ageG .pill').forEach(p=>{p.onclick=()=>{document.querySelectorAll('#ageG .pill').forEach(x=>x.classList.remove('on'));p.classList.add('on');ageVal=p.dataset.v;};});
+document.querySelectorAll('#diagG .pill').forEach(p=>{p.onclick=()=>{document.querySelectorAll('#diagG .pill').forEach(x=>x.classList.remove('on'));p.classList.add('on');diagVal=p.dataset.v;};});
+
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');addFiles(e.dataTransfer.files);});
+document.getElementById('fi').addEventListener('change',e=>addFiles(e.target.files));
+
+function addFiles(list){Array.from(list).forEach(f=>{if(!files.find(x=>x.name===f.name))files.push(f);});renderFiles();}
+function rmFile(i){files.splice(i,1);renderFiles();}
+function renderFiles(){document.getElementById('flist').innerHTML=files.map((f,i)=>`<div class="fi"><span>📄</span><span class="fn">${f.name}</span><span class="fsz">${(f.size/1024).toFixed(0)} KB</span><span class="frm" onclick="rmFile(${i})">×</span></div>`).join('');}
+async function readFile(f){return new Promise(res=>{const r=new FileReader();r.onload=e=>res(e.target.result||'');r.onerror=()=>res('[onleesbaar]');r.readAsText(f,'UTF-8');});}
+function setSt(html,type){document.getElementById('status').innerHTML=html?`<div class="sb ${type}">${html}</div>`:'';}
+
+async function generate(){
+  const name=document.getElementById('cName').value.trim();
+  const dob=document.getElementById('cDOB').value.trim();
+  const period=document.getElementById('cPeriod').value.trim();
+  const extra=document.getElementById('extra').value.trim();
+  if(!name){setSt('⚠️ Vul de naam van de cliënt in.','err');return;}
+  if(!files.length){setSt('⚠️ Upload minstens één document.','err');return;}
+  if(!apiKey){setSt('⚠️ Geen API-sleutel. Klik op "Wijzigen" rechtsboven.','err');return;}
+  document.getElementById('gbtn').disabled=true;
+  document.getElementById('result').innerHTML='';
+  setSt(`Documenten inlezen<span class="dots"><span>.</span><span>.</span><span>.</span></span><div class="pb"><div class="pf" id="pf"></div></div>`,'info');
+  let fc='';
+  for(let i=0;i<files.length;i++){
+    fc+=`\n\n=== BESTAND: ${files[i].name} ===\n${(await readFile(files[i])).slice(0,9000)}`;
+    const p=document.getElementById('pf');if(p)p.style.width=((i+1)/files.length*40)+'%';
+  }
+  const dmap={adhd_ass:'ADHD + ASS',adhd:'ADHD alleen',ass:'ASS alleen',kort:'Diagnostisch attest (kort)'};
+  const amap={volwassene:'volwassene (18+)',jongere:'jongere (12–17)',kind:'kind (6–11)'};
+  const s2=document.createElement('style');s2.textContent='@keyframes pga{from{width:50%}to{width:90%}}';document.head.appendChild(s2);
+  setSt(`Verslag schrijven<span class="dots"><span>.</span><span>.</span><span>.</span></span> Dit duurt 30–60 seconden.<div class="pb"><div class="pf" style="width:50%;animation:pga 40s linear forwards"></div></div>`,'info');
+
+  const sys=`Je bent Freya Nelen, psycholoog bij Psychologisch Centrum Noord (PCN) te Wijnegem. Je schrijft psychodiagnostische verslagen in professioneel, formeel Nederlands. Derde persoon altijd. Lange, rijke zinnen. Academisch maar warm.
+
+SCHRIJFSTIJL:
+- Aanmelding: altijd "[Naam], [X] jaar, meldt zich aan bij PCN voor een psychodiagnostisch onderzoek naar..."
+- Verbindingswoorden: "Om te beginnen", "Vervolgens", "Daarnaast", "Tot slot", "Opvallend hierbij is dat"
+- Aanmelding = 3–5 narratieve paragrafen, geen opsommingen
+- Anamnese = narratief, rijke beschrijving per domein, geen bullets
+- Algemeen Besluit begint ALTIJD: "Eerst en vooral kunnen we op basis van dit onderzoek tot de conclusie komen dat de resultaten aansluiten bij volgende DSM-5 diagnose:"
+- DIVA: "voldoet aan X van de Y kenmerken voor het domein..."
+- Advies: concreet, persoonsgebonden, therapievormen (ACT, CGT, COGMED, psycho-educatie)
+
+STRUCTUUR (gebruik ### voor hoofdtitels, ## voor subtitels):
+### HEADER
+Psych. Cons.: Marilyn Istas | Psycholoog: Freya Nelen | Bijlweg 11, 2110 Wijnegem | 0477 21 88 41
+### Diagnostisch onderzoeksverslag
+Naam: [naam] | Afname: [periode] | Geboortedatum: [datum]
+### Aanmelding
+### Testbatterij
+### Uitgebreide anamnese
+## Krachten/positieve eigenschappen
+## Familiale anamnese
+## Ontwikkeling
+## Inventaris levensdomeinen
+### [Per instrument - volledige sectie]
+### Besluit
+### Advies
+### Verslag opgemaakt door
+Freya Nelen - Marilyn Istas - PCN
+
+Gebruik [XX] voor ontbrekende scores. Wees zo volledig mogelijk.`;
+
+  const usr=`Schrijf een volledig psychodiagnostisch verslag:
+NAAM: ${name}
+GEBOORTEDATUM: ${dob||'[invullen]'}
+AFNAMEPERIODE: ${period||'[invullen]'}
+TYPE: ${dmap[diagVal]}
+LEEFTIJD: ${amap[ageVal]}
+${extra?`\nADDITIONELE CONTEXT:\n${extra}`:''}
+DOCUMENTEN:${fc}
+Schrijf het volledige verslag zoals Freya Nelen het zou schrijven.`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:4096,system:sys,messages:[{role:'user',content:usr}]})
+    });
+    if(!resp.ok){const ed=await resp.json().catch(()=>({}));throw new Error(ed.error?.message||`HTTP ${resp.status}`);}
+    const data=await resp.json();
+    lastText=data.content?.find(b=>b.type==='text')?.text||'';
+    setSt('','');
+    showResult(lastText,name);
+  }catch(e){setSt(`❌ Fout: ${e.message}`,'err');}
+  document.getElementById('gbtn').disabled=false;
+}
+
+function showResult(text,name){
+  document.getElementById('result').innerHTML=`
+    <div class="rbox">
+      <div class="rhdr">
+        <span class="rtit">✓ Verslag — ${name}</span>
+        <div class="bgrp">
+          <button class="abtn2" onclick="copyRep()">Kopiëren</button>
+          <button class="abtn2 pr" id="wbtn" onclick="dlWord()">⬇ Word downloaden</button>
+        </div>
+      </div>
+      <div class="rcnt">${esc(text)}</div>
+    </div>`;
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function copyRep(){
+  navigator.clipboard.writeText(lastText).then(()=>{
+    const b=document.querySelector('.abtn2:not(.pr)');b.textContent='Gekopieerd ✓';setTimeout(()=>b.textContent='Kopiëren',2000);
+  });
+}
+
+function dlWord(){
+  const btn=document.getElementById('wbtn');
+  btn.textContent='Bezig…';btn.disabled=true;
+  try{
+    const nm=document.getElementById('cName').value.trim()||'Cliënt';
+    // Convert markdown-like text to HTML for html-docx-js
+    const html=markdownToHtml(lastText);
+    const fullHtml=`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>
+      body{font-family:Arial,sans-serif;font-size:11pt;line-height:1.6;margin:2cm}
+      h1{font-size:14pt;color:#2d6a4f;margin-top:18pt;margin-bottom:8pt}
+      h2{font-size:12pt;color:#1a4a32;margin-top:14pt;margin-bottom:6pt}
+      p{margin-bottom:6pt}
+      ul{margin-bottom:6pt}
+      li{margin-bottom:3pt}
+      .header-line{border-bottom:2pt solid #2d6a4f;padding-bottom:6pt;margin-bottom:14pt;color:#555;font-size:9pt}
+      .footer-line{border-top:2pt solid #2d6a4f;padding-top:8pt;margin-top:20pt;font-size:9pt;color:#555}
+    </style></head><body>${html}</body></html>`;
+    const blob=htmlDocx.asBlob(fullHtml);
+    saveAs(blob,`Verslag ${nm}.docx`);
+    btn.textContent='⬇ Word downloaden';
+  }catch(e){
+    alert('Word-export mislukt: '+e.message);
+    btn.textContent='⬇ Word downloaden';
+  }
+  btn.disabled=false;
+}
+
+function markdownToHtml(text){
+  const lines=text.split('\n');
+  let html='<div class="header-line"><strong>Psych. Cons.: Marilyn Istas</strong> | <strong>Psycholoog: Freya Nelen</strong> | Bijlweg 11, 2110 Wijnegem | 0477 21 88 41</div>';
+  let inList=false;
+  for(const line of lines){
+    const t=line.trim();
+    if(!t){
+      if(inList){html+='</ul>';inList=false;}
+      html+='<p>&nbsp;</p>';
+      continue;
+    }
+    if(t.startsWith('### ')){
+      if(inList){html+='</ul>';inList=false;}
+      html+=`<h1>${esc2(t.slice(4))}</h1>`;
+    }else if(t.startsWith('## ')){
+      if(inList){html+='</ul>';inList=false;}
+      html+=`<h2>${esc2(t.slice(3))}</h2>`;
+    }else if(t.startsWith('# ')){
+      if(inList){html+='</ul>';inList=false;}
+      html+=`<h1>${esc2(t.slice(2))}</h1>`;
+    }else if(t.startsWith('- ')||t.startsWith('• ')){
+      if(!inList){html+='<ul>';inList=true;}
+      html+=`<li>${esc2(t.slice(2))}</li>`;
+    }else{
+      if(inList){html+='</ul>';inList=false;}
+      html+=`<p>${esc2(t)}</p>`;
+    }
+  }
+  if(inList)html+='</ul>';
+  html+='<div class="footer-line"><strong>Freya Nelen</strong><br>Psycholoog · PCN Psychologisch Centrum Noord<br>Bijlweg 11, 2110 Wijnegem | www.psychologischcentrumnoord.be</div>';
+  return html;
+}
+
+function esc2(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+}
+</script>
+</body>
+</html>
